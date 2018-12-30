@@ -268,8 +268,6 @@ class SiteDownloader(object):
                 # that code in the main thread.
                 fakeThread.ProcessUrl()
                 self.CheckDeadThreads()
-
-            LogDebug('Exiting main thread')
         else:
             while self.bRunning:
                 # TODO in frontend, set bRunning to false when program is ready to exit.
@@ -297,7 +295,7 @@ class SiteDownloader(object):
             for thread in self.threads:
                 thread.join()
 
-            LogDebug('Exiting main thread')
+        LogInfo('Exiting main thread')
 
 
 class TimeoutHandler(object):

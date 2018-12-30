@@ -6,7 +6,7 @@ import datetime
 import re
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from site_downloader import SiteDownloader, SiteDownloaderPlugin, SPEED_TEST, LogDebug, LogError, PageDetailsError, HTTPError, urlopen, urljoin, UrlInfo
+from site_downloader import SiteDownloader, SiteDownloaderPlugin, SPEED_TEST, LogDebug, LogError, PageDetailsError, HTTPError, urljoin, UrlInfo
 
 class VBulletinForumProcessor(SiteDownloaderPlugin):
     def __init__(self, bDownloadFiles=True, bChangeFilePaths=True):
@@ -40,14 +40,6 @@ class VBulletinForumProcessor(SiteDownloaderPlugin):
             if not match:
                 raise PageDetailsError("URL isn't a valid first page of a thread")
 
-        try:
-            # TODO replace this with self.GetPage(url) and do timeout checking.
-            response = urlopen(url)
-        except (HTTPError, IOError):
-            raise PageDetailsError('Invalid URL')
-        if response.getcode() != 200:
-            raise PageDetailsError('Failed to read page')
-
         urlIntro = match.group(1)
         preMainName = match.group(2)   # For later use with other vBulletin URL formats.
         mainName = match.group(3)
@@ -62,7 +54,7 @@ class VBulletinForumProcessor(SiteDownloaderPlugin):
             raise PageDetailsError('Failed to parse main page name')
 
         startTime = datetime.datetime.now()
-        soup = self.GetSoup(response)
+        soup = self.GetSoup(self.GetPage(url).text)
         endTime = datetime.datetime.now()
 
         if SPEED_TEST:
@@ -115,7 +107,7 @@ class VBulletinForumProcessor(SiteDownloaderPlugin):
         saveDirName = os.path.basename(urlInfo.fileSavePath) + '_files'
 
         startTime = datetime.datetime.now()
-        soup = self.GetSoup(urlopen(url))
+        soup = self.GetSoup(self.GetPage(url).text)
         endTime = datetime.datetime.now()
         if SPEED_TEST:
             LogDebug('--page soup', (endTime - startTime).total_seconds(), 'seconds')
