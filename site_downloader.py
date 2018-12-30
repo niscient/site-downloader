@@ -14,39 +14,6 @@ import time
 import logging
 import traceback
 
-g_logger = None
-
-def SetupLogger():
-    global g_logger
-    g_logger = logging.getLogger('SiteDownloader')
-    g_logger.setLevel(logging.DEBUG)
-
-    handler = logging.FileHandler('output.log')
-    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
-    g_logger.addHandler(handler)
-
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(logging.Formatter('%(levelname)s %(message)s'))
-    g_logger.addHandler(handler)
-
-def LogDebug(*args):
-    g_logger.debug(' '.join([ToStr(arg) for arg in args]))
-
-def LogInfo(*args):
-    g_logger.info(' '.join([ToStr(arg) for arg in args]))
-
-def LogWarning(*args):
-    g_logger.warning(' '.join([ToStr(arg) for arg in args]))
-
-def LogError(*args):
-    g_logger.error(' '.join([ToStr(arg) for arg in args]))
-
-def LogCritical(*args):
-    g_logger.critical(' '.join([ToStr(arg) for arg in args]))
-
-SetupLogger()
-
-
 try:   # Python 3
     from urllib.request import urlopen
     from urllib.parse import urljoin
@@ -80,8 +47,51 @@ class WriteError(SiteDownloaderError):
 class WindowsDelayedWriteError(SiteDownloaderError):
     pass
 
+
+g_logger = None
+g_userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
+
+PROGRAM_NAME = 'SiteDownloader'
 SPEED_TEST = False
 SPEED_TEST_MAKES_FILES = True
+
+
+def SetupLogger():
+    global g_logger
+    g_logger = logging.getLogger('SiteDownloader')
+    g_logger.setLevel(logging.DEBUG)
+
+    handler = logging.FileHandler('output.log')
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+    g_logger.addHandler(handler)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter('%(levelname)s %(message)s'))
+    g_logger.addHandler(handler)
+
+def LogDebug(*args):
+    g_logger.debug(' '.join([ToStr(arg) for arg in args]))
+
+def LogInfo(*args):
+    g_logger.info(' '.join([ToStr(arg) for arg in args]))
+
+def LogWarning(*args):
+    g_logger.warning(' '.join([ToStr(arg) for arg in args]))
+
+def LogError(*args):
+    g_logger.error(' '.join([ToStr(arg) for arg in args]))
+
+def LogCritical(*args):
+    g_logger.critical(' '.join([ToStr(arg) for arg in args]))
+
+SetupLogger()
+
+def GetUserAgent():
+    return g_userAgent
+
+def SetUserAgent(userAgent):
+    global g_userAgent
+    g_userAgent = userAgent
 
 
 class UrlInfo(object):
@@ -377,8 +387,7 @@ class SiteDownloaderPlugin(object):
         client = requests.session()
         client.headers = requests.utils.default_headers()
 
-        # TODO generate user agent
-        client.headers.update({'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'})
+        client.headers.update({'User-Agent': GetUserAgent()})
 
         if headers is not None:
             client.headers.update(headers)
@@ -561,8 +570,7 @@ class DownloadThread(Thread):
             client = requests.session()
             client.headers = requests.utils.default_headers()
 
-            # TODO generate user agent
-            client.headers.update({'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'})
+            client.headers.update({'User-Agent': GetUserAgent()})
 
             if loginCredentials is not None:
                 r = requests.get(fileUrl, stream=True, timeout=g_timeoutHandler.GetUrlTimeouts(fileUrl), **loginCredentials)

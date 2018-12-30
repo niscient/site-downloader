@@ -43,7 +43,8 @@ import os
 import sys
 import datetime
 import argparse
-from site_downloader import SiteDownloader, LogDebug, LogError, PageDetailsError, SetupError, HTTPConnectError, HTTPRequestError
+import configparser
+from site_downloader import SiteDownloader, LogDebug, LogError, PageDetailsError, SetupError, HTTPConnectError, HTTPRequestError, PROGRAM_NAME, SetUserAgent
 
 PLUGIN_DIR = 'plugins'
 
@@ -95,6 +96,13 @@ def main(bSpeedTest=False):
 
 if __name__ == '__main__':
     try:
+        config = configparser.ConfigParser()
+        config.read('settings.ini')
+        try:
+            SetUserAgent(config[PROGRAM_NAME]['user_agent'])
+        except (configparser.MissingSectionHeaderError, KeyError):
+            pass
+
         bSpeedTest = '--test' in sys.argv
         startTime = datetime.datetime.now()
         main(bSpeedTest=bSpeedTest)
