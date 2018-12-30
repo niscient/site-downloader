@@ -1,8 +1,11 @@
 # Processor for threads from vBulletin forums
 
 import os
+import sys
 import datetime
 import re
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from site_downloader import SiteDownloader, SiteDownloaderPlugin, SPEED_TEST, LogDebug, LogError, PageDetailsError, HTTPError, urlopen, urljoin, UrlInfo
 
 class VBulletinForumProcessor(SiteDownloaderPlugin):
