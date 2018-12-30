@@ -1,4 +1,4 @@
-# Processor for threads from VBulletin forums
+# Processor for threads from vBulletin forums
 
 import os
 import datetime
@@ -11,11 +11,12 @@ class VBulletinForumProcessor(SiteDownloaderPlugin):
         self.bChangeFilePaths = bChangeFilePaths
 
     def ProcessorName(self):
-        return 'VBulletin'
+        return 'vBulletin'
 
     def GetPageRelevance(self, url):
         return (100 if url.find('/showthread.php?') != -1 else 0)
 
+    # For later use.
     def ParseCategoryTag(self, tagValue):
         return ''
 
@@ -34,18 +35,18 @@ class VBulletinForumProcessor(SiteDownloaderPlugin):
             match = re.search('(.*)(/showthread.php\?)(\d+-.*)', url)
             bUsedAltRegex = True
             if not match:
-                raise PageDetailsError('URL isn\'t a valid first page of a thread: ' + url)
+                raise PageDetailsError("URL isn't a valid first page of a thread")
 
         try:
             # TODO replace this with self.GetPage(url) and do timeout checking.
             response = urlopen(url)
         except (HTTPError, IOError):
-            raise PageDetailsError('Invalid URL: ' + url)
+            raise PageDetailsError('Invalid URL')
         if response.getcode() != 200:
-            raise PageDetailsError('Failed to read page: ' + url)
+            raise PageDetailsError('Failed to read page')
 
         urlIntro = match.group(1)
-        preMainName = match.group(2)   # For later use with other VBulletin URL formats.
+        preMainName = match.group(2)   # For later use with other vBulletin URL formats.
         mainName = match.group(3)
 
         if bUsedAltRegex:
@@ -55,7 +56,7 @@ class VBulletinForumProcessor(SiteDownloaderPlugin):
 
         usableMainName = self.UsableFilename(mainName)
         if len(mainName) == 0 or usableMainName != mainName:
-            raise PageDetailsError('Failed to parse main page name: ' + url)
+            raise PageDetailsError('Failed to parse main page name')
 
         startTime = datetime.datetime.now()
         soup = self.GetSoup(response)
@@ -83,7 +84,7 @@ class VBulletinForumProcessor(SiteDownloaderPlugin):
                 break
 
         if not bFoundLastPageTag:
-            LogDebug('Warning: Couldn\'t find last page tag: ' + url)
+            LogWarning('Warning: For URL: ' + url + "\nCouldn't find last page tag")
             lastPage = 1
 
         # Add the pages to the processing queue.

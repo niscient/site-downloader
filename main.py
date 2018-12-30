@@ -12,8 +12,8 @@ Notes:
 Future major improvements:
 -Create a GUI frontend and use it to keep track of download progress and possible errors
  for each url item.
--Support a wider variety of VBulletin URL and CSS formats.
--Support VBulletin forums, in addition to individual threads. This will require
+-Support a wider variety of vBulletin URL and CSS formats.
+-Support vBulletin forums, in addition to individual threads. This will require
  implementing a system for starting at the last page of a forum and working towards the
  start. As we are considering pages, we must account for the possibility that users
  could post a lot of new threads, thus making it hard for the program to tell if it has

@@ -58,7 +58,7 @@ SPEED_TEST_MAKES_FILES = True
 
 def SetupLogger():
     global g_logger
-    g_logger = logging.getLogger('SiteDownloader')
+    g_logger = logging.getLogger(PROGRAM_NAME)
     g_logger.setLevel(logging.DEBUG)
 
     handler = logging.FileHandler('output.log')
@@ -198,44 +198,46 @@ class SiteDownloader(object):
             # TODO alter logging style to print URL before any error message, and remove
             # URL printing from all error messages.
 
+            errorPrefix = 'For URL: ' + t.GetUrl() + '\n'
+
             if isinstance(t.rval, Exception):
                 # Note that we can get a HTTPError or IOError as a result of a urlopen()
                 # failure, but we'll rely on other code to wrap such calls and won't check
                 # for them here.
                 if isinstance(t.rval, HTTPConnectError) or isinstance(t.rval, HTTPRequestError):
                     if IsStr(t.urlItemObj):
-                        LogError('Error retrieving URL:', t.urlItemObj)
+                        LogError(errorPrefix + 'Error retrieving page')
                     else:
                         if IsImageURL(t.urlItemObj.url):
                             if not t.urlItemObj.url in self.failedImages:
-                                LogError('Error retrieving image:', t.urlItemObj.url)
+                                LogError(errorPrefix + 'Error retrieving image')
                                 self.failedImages.append(t.urlItemObj.url)
                         else:
                             if not t.urlItemObj.url in self.failedUrls:
-                                LogError('Error retrieving data:', t.urlItemObj.url)
+                                LogError(errorPrefix + 'Error retrieving data')
                                 self.failedUrls.append(t.urlItemObj.url)
                 elif isinstance(t.rval, WriteError):
-                    LogError('Error:', ToStr(t.rval))
+                    LogError(errorPrefix + 'Error:', ToStr(t.rval))
                 elif isinstance(t.rval, PageDetailsError):
-                    LogError('Problem when parsing page:', ToStr(t.rval), 'for:', t.GetUrl())
+                    LogError(errorPrefix + 'Problem when parsing page:', ToStr(t.rval))
                 elif isinstance(t.rval, FileExistsError):
-                    LogError('File already exists:', ToStr(t.rval), 'for:', t.GetUrl())
+                    LogError(errorPrefix + 'File already exists:', ToStr(t.rval))
                 elif isinstance(t.rval, WindowsDelayedWriteError):
-                    LogError('Failed to download file:', t.GetUrl())
+                    LogError(errorPrefix + 'Failed to download file')
                 elif isinstance(t.rval, LogicError):
-                    LogError('Error:', ToStr(t.rval))
+                    LogError(errorPrefix + 'Error:', ToStr(t.rval))
                 else:
                     try:
-                        LogError('Raising exception from thread:', t.rval.traceback)
+                        LogError(errorPrefix + 'Raising exception from thread:', t.rval.traceback)
                     except AttributeError:
-                        LogError('Raising exception from thread:')
-                    LogError('For URL:', t.GetUrl())
+                        LogError(errorPrefix + 'Raising exception from thread:')
                     raise t.rval.__class__(ToStr(t.rval))
             else:
                 if t.rval is None:
-                    LogError('Error: Got nothing from page parsing:', t.GetUrl())
+                    LogError(errorPrefix + 'Error: Got nothing from parsing page')
                     return
-                LogDebug('got', len(t.rval), 'items from parsing', t.GetUrl())
+
+                LogDebug('Got', len(t.rval), 'items from parsing:', t.GetUrl())
                 newUrlItems = t.rval
 
                 # Note that a URL and a UrlItem wrapping that URL do not cause a clash,
@@ -417,10 +419,10 @@ class SiteDownloaderPlugin(object):
                 break
             except (requests.exceptions.ProxyError, requests.exceptions.ConnectionError):
                 if attempt == g_timeoutHandler.connectAttempts - 1:
-                    raise HTTPConnectError('Request failed: ' + url)
+                    raise HTTPConnectError('Request failed')
 
         if r is None or r.status_code != 200:
-            raise HTTPRequestError('Request failed: ' + url)
+            raise HTTPRequestError('Request failed')
         return r
 
     def GetSoup(self, html, soupStrainer=None):
@@ -486,7 +488,7 @@ class DownloadThread(Thread):
             url = self.urlItemObj.url
 
             if self.urlItemObj.plugin is None:
-                raise LogicError('UrlItem lacks plugin:', self.urlItemObj)
+                raise LogicError('UrlItem lacks plugin: ' + self.urlItemObj)
             usePlugin = self.urlItemObj.plugin
 
         if usePlugin is None:
@@ -525,9 +527,8 @@ class DownloadThread(Thread):
                     newUrlItems, soup, pageFilePath = usePlugin.ProcessUrlInfo(urlInfo)
 
                     if (soup is not None or pageFilePath is not None) and (soup is None or pageFilePath is None):
-                        raise LogicError('Failed to get proper info to save page: ' + urlInfo.url)
+                        raise LogicError('Failed to get proper info to save page')
 
-                    LogDebug("WHATTEST", pageFilePath, soup is not None)
                     if soup is not None and pageFilePath is not None:
                         if not SPEED_TEST or SPEED_TEST_MAKES_FILES:
                             # Save page as file.
@@ -537,7 +538,7 @@ class DownloadThread(Thread):
                             if os.path.exists(pageSavePath):
                                 # Note that we don't throw an exception here, so that
                                 # we instead return the list of new URL items we got.
-                                LogError('For URL:', urlInfo.url, '\nPage file already exists:', pageSavePath)
+                                LogError('Error: For URL:', urlInfo.url, '\nPage file already exists:', pageSavePath)
                             else:
                                 saveDirPath = os.path.dirname(pageSavePath)
                                 try:
@@ -578,20 +579,20 @@ class DownloadThread(Thread):
                 r = client.get(fileUrl, stream=True, timeout=g_timeoutHandler.GetUrlTimeouts(fileUrl))
         except requests.exceptions.ConnectTimeout:
             self.domainConnectFailCount[GetDomain(fileUrl)] += 1
-            raise HTTPConnectError(fileUrl)
+            raise HTTPConnectError()
         except requests.exceptions.RequestException:
-            raise HTTPConnectError(fileUrl)
+            raise HTTPConnectError()
         endTime = datetime.datetime.now()
 
         try:
             fileType = r.headers['Content-Type']
             if fileType == 'text/html':
-                raise HTTPRequestError('Got HTML page instead of file, for: ' + fileUrl)
+                raise HTTPRequestError('Got HTML page instead of file')
 
             fileSize = int(r.headers['Content-Length'])
         except (KeyError, TypeError):
             fileSize = None
-            LogWarning('No way of verifying file size for:', fileUrl)
+            LogWarning('Warning: For URL:', fileUrl, '\nNo way of verifying file size')
 
         if r.status_code == 200:
             try:
@@ -610,7 +611,7 @@ class DownloadThread(Thread):
                 if fileSize is not None:
                     gotFileSize = os.path.getsize(savePath)
                     if gotFileSize != fileSize:
-                        raise HTTPRequestError('File size mismatch: expected ' + str(fileSize) + ', got' + str(gotFileSize) + ', for: ' + fileUrl)
+                        raise HTTPRequestError('File size mismatch: expected ' + str(fileSize) + ', got' + str(gotFileSize))
                 endTime = datetime.datetime.now()
             except FileNotFoundError:
                 # It's possible to get this error (yes, when writing to a new file) as a
@@ -625,10 +626,10 @@ class DownloadThread(Thread):
                 # then need to modify every reference to this file in all CSS and
                 # JavaScript files. So... a possible TODO.
 
-                raise WindowsDelayedWriteError("Unable to create file: '" + savePath + "'" + ', for: ' + fileUrl)
+                raise WindowsDelayedWriteError('Unable to create file: ' + savePath)
             except (OSError, IOError):
                 raise WriteError('Unable to create file: ' + savePath)
         else:
-            raise HTTPRequestError('Request failed: ' + fileUrl)
+            raise HTTPRequestError('Request failed')
 
         LogDebug('Done writing file for URL', fileUrl)
