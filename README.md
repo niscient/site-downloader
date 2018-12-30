@@ -9,5 +9,5 @@ Run program by passing a text file with URLs as an argument. You also have to sp
 Example:
 
 ```
-python main.py C:\Downloads file_with_urls.txt
+python main.py "C:\Downloads" file_with_urls.txt
 ```
