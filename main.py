@@ -26,7 +26,6 @@ Future major improvements:
  before this one (the "next" page after this); etc.
 
 Future minor improvements:
--Load plugins dynamically.
 -Download JS files. Examples of tags:
  <script type="text/javascript" src="file.js"></script>
  <script language="javascript" src="file.js" />

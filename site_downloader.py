@@ -195,9 +195,6 @@ class SiteDownloader(object):
         self.threads = [t for t in self.threads if t not in deadThreads]
 
         for t in deadThreads:
-            # TODO alter logging style to print URL before any error message, and remove
-            # URL printing from all error messages.
-
             errorPrefix = 'For URL: ' + t.GetUrl() + '\n'
 
             if isinstance(t.rval, Exception):
