@@ -61,7 +61,7 @@ def main(bSpeedTest=False):
     if not os.path.isfile(inFilePath):
         raise SetupError('URL list file doesn\'t exist: "' + inFilePath + '"')
 
-    dl = SiteDownloader(rootDir=rootDir, bSingleThread=True)
+    dl = SiteDownloader(rootDir=rootDir, bSingleThread=False)
 
     if not os.path.isdir(PLUGIN_DIR):
         raise SetupError("Couldn't find '" + PLUGIN_DIR + "' directory")
