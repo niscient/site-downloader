@@ -195,7 +195,7 @@ class SiteDownloader(object):
         self.threads = [t for t in self.threads if t not in deadThreads]
 
         for t in deadThreads:
-            errorPrefix = 'For URL: ' + t.GetUrl() + '\n'
+            errorSuffix = '(' + t.GetUrl() + ')'
 
             if isinstance(t.rval, Exception):
                 # Note that we can get a HTTPError or IOError as a result of a urlopen()
@@ -203,38 +203,44 @@ class SiteDownloader(object):
                 # for them here.
                 if isinstance(t.rval, HTTPConnectError) or isinstance(t.rval, HTTPRequestError):
                     if IsStr(t.urlItemObj):
-                        LogError(errorPrefix + 'Error retrieving page')
+                        LogError('Error retrieving page', errorSuffix)
                     else:
                         if IsImageURL(t.urlItemObj.url):
                             if not t.urlItemObj.url in self.failedImages:
-                                LogError(errorPrefix + 'Error retrieving image')
+                                LogError('Error retrieving image', errorSuffix)
                                 self.failedImages.append(t.urlItemObj.url)
                         else:
                             if not t.urlItemObj.url in self.failedUrls:
-                                LogError(errorPrefix + 'Error retrieving data')
+                                LogError('Error retrieving data', errorSuffix)
                                 self.failedUrls.append(t.urlItemObj.url)
                 elif isinstance(t.rval, WriteError):
-                    LogError(errorPrefix + 'Error:', ToStr(t.rval))
+                    LogError('Error:', ToStr(t.rval), errorSuffix)
                 elif isinstance(t.rval, PageDetailsError):
-                    LogError(errorPrefix + 'Problem when parsing page:', ToStr(t.rval))
+                    LogError('Problem when parsing page:', ToStr(t.rval), errorSuffix)
                 elif isinstance(t.rval, FileExistsError):
-                    LogError(errorPrefix + 'File already exists:', ToStr(t.rval))
+                    LogError('File already exists:', ToStr(t.rval), errorSuffix)
                 elif isinstance(t.rval, WindowsDelayedWriteError):
-                    LogError(errorPrefix + 'Failed to download file')
+                    LogError('Failed to download file', errorSuffix)
                 elif isinstance(t.rval, LogicError):
-                    LogError(errorPrefix + 'Error:', ToStr(t.rval))
+                    LogError('Error:', ToStr(t.rval), errorSuffix)
                 else:
                     try:
-                        LogError(errorPrefix + 'Raising exception from thread:', t.rval.traceback)
+                        LogError('Raising exception from thread:', t.rval.traceback, errorSuffix)
                     except AttributeError:
-                        LogError(errorPrefix + 'Raising exception from thread:')
+                        LogError('Raising exception from thread:', errorSuffix)
                     raise t.rval.__class__(ToStr(t.rval))
             else:
                 if t.rval is None:
-                    LogError(errorPrefix + 'Error: Got nothing from parsing page')
+                    LogError('Error: Got nothing from parsing page', errorSuffix)
                     return
 
-                LogDebug('Got', len(t.rval), 'items from parsing:', t.GetUrl())
+                if not IsStr(t.urlItemObj) and not t.urlItemObj.bFile:
+                    itemNum = len(t.rval)
+                    if itemNum == 0:
+                        LogWarning("Warning: Didn't get any items from parsing page", errorSuffix)
+                    else:
+                        LogDebug('Got', len(t.rval), 'items from parsing page', errorSuffix)
+
                 newUrlItems = t.rval
 
                 # Note that a URL and a UrlItem wrapping that URL do not cause a clash,
